@@ -50,3 +50,4 @@ wheel==0.43.0
 xattr==1.1.0
 yarg==0.1.9
 yfinance==0.2.43
+python-dotenv==1.0.0
