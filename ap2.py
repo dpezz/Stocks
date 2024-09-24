@@ -209,7 +209,7 @@ def main():
     st.title("📈 Advanced Stock Analyzer")
 
     with st.sidebar:
-        st.header("Input Parameters")
+        st.header("Welcome!")
         ticker = st.text_input("Enter Stock Ticker", value="AAPL").upper()
 
     if ticker:
