@@ -1,13 +1,6 @@
 import os
 from dotenv import load_dotenv
-
-# Load environment variables
-load_dotenv()
-
-# Get API key from environment variable
-NEWS_API_KEY = os.getenv('NEWS_API_KEY')
-
-# Rest of your imports...
+import requests
 import streamlit as st
 import yfinance as yf
 import pandas as pd
@@ -15,16 +8,20 @@ import numpy as np
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 from datetime import datetime, timedelta
-from newsapi import NewsApiClient
 from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.metrics import mean_squared_error
 from textblob import TextBlob
 import ta
 
+# Load environment variables
+load_dotenv()
+
+# Get API key from environment variable
+NEWS_API_KEY = os.getenv('NEWS_API_KEY')
+
 # Set page config
 st.set_page_config(page_title="Advanced Stock Analyzer", layout="wide")
-
 
 # Custom CSS to style the app
 st.markdown("""
@@ -112,15 +109,28 @@ def get_stock_data(ticker):
 
 @st.cache_data
 def get_news(ticker, days=30):
-    newsapi = NewsApiClient(api_key=NEWS_API_KEY)
-    end_date = datetime.now()
-    start_date = end_date - timedelta(days=days)
-    articles = newsapi.get_everything(q=ticker,
-                                      from_param=start_date.strftime('%Y-%m-%d'),
-                                      to=end_date.strftime('%Y-%m-%d'),
-                                      language='en',
-                                      sort_by='publishedAt')
-    return articles['articles']
+    try:
+        url = "https://newsapi.org/v2/everything"
+        end_date = datetime.now()
+        start_date = end_date - timedelta(days=days)
+        
+        params = {
+            'q': ticker,
+            'from': start_date.strftime('%Y-%m-%d'),
+            'to': end_date.strftime('%Y-%m-%d'),
+            'language': 'en',
+            'sortBy': 'publishedAt',
+            'apiKey': NEWS_API_KEY
+        }
+        
+        response = requests.get(url, params=params)
+        response.raise_for_status()  # Raises an HTTPError if the HTTP request returned an unsuccessful status code
+        
+        articles = response.json().get('articles', [])
+        return articles
+    except requests.RequestException as e:
+        st.error(f"An error occurred while fetching news: {str(e)}")
+        return []
 
 def calculate_sentiment(news):
     sentiments = []
