@@ -18,7 +18,7 @@ import ta
 load_dotenv()
 
 # Get API key from environment variable
-NEWS_API_KEY = os.getenv('NEWS_API_KEY')
+ALPHA_VANTAGE_API_KEY = os.getenv('ALPHA_VANTAGE_API_KEY')
 
 # Set page config
 st.set_page_config(page_title="Advanced Stock Analyzer", layout="wide")
@@ -110,24 +110,35 @@ def get_stock_data(ticker):
 @st.cache_data
 def get_news(ticker, days=30):
     try:
-        url = "https://newsapi.org/v2/everything"
+        url = "https://www.alphavantage.co/query"
         end_date = datetime.now()
         start_date = end_date - timedelta(days=days)
         
         params = {
-            'q': ticker,
-            'from': start_date.strftime('%Y-%m-%d'),
-            'to': end_date.strftime('%Y-%m-%d'),
-            'language': 'en',
-            'sortBy': 'publishedAt',
-            'apiKey': NEWS_API_KEY
+            "function": "NEWS_SENTIMENT",
+            "tickers": ticker,
+            "time_from": start_date.strftime('%Y%m%dT%H%M'),
+            "limit": 50,  # Adjust this number as needed
+            "apikey": ALPHA_VANTAGE_API_KEY
         }
         
         response = requests.get(url, params=params)
         response.raise_for_status()  # Raises an HTTPError if the HTTP request returned an unsuccessful status code
         
-        articles = response.json().get('articles', [])
-        return articles
+        data = response.json()
+        articles = data.get('feed', [])
+        
+        # Format the articles to match your existing structure
+        formatted_articles = []
+        for article in articles:
+            formatted_articles.append({
+                "title": article.get('title', ''),
+                "description": article.get('summary', ''),
+                "url": article.get('url', ''),
+                "publishedAt": article.get('time_published', '')
+            })
+        
+        return formatted_articles
     except requests.RequestException as e:
         st.error(f"An error occurred while fetching news: {str(e)}")
         return []
